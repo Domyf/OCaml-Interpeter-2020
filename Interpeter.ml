@@ -88,6 +88,7 @@ let non x = if (typecheck "bool" x)
 let rec eval (e : exp) (r : evT env) : evT = match e with
 	Eint n -> Int n |
 	Ebool b -> Bool b |
+	EString s -> String s |
 	IsZero a -> iszero (eval a r) |
 	Den i -> applyenv r i |
 	Eq(a, b) -> eq (eval a r) (eval b r) |
@@ -106,10 +107,10 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
 	Let(i, e1, e2) -> eval e2 (bind r i (eval e1 r)) |
 	Fun(i, a) -> FunVal(i, a, r) |
 	Dictionary(d) -> DictionaryVal(evalDict d r) |
-	KeyList(kl) -> KeyListVal(evalKeyList kl r) |
+	KeyList(kl) -> KeyListVal(convertKeyList kl) |
 	Insert(key, e1, dict) -> 
 				(match eval dict r with
-					DictionaryVal(dic) -> DictionaryVal(insertDic key (eval e1 r) dic r) |
+					DictionaryVal(dic) -> DictionaryVal(insertDic key (eval e1 r) dic) |
 					_ -> failwith("Not a dictionary")) |
 	Delete(dict, key) -> 
 				(match eval dict r with
@@ -150,25 +151,25 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
                          			                eval letBody r1 |
             		_ -> failwith("non functional def"))
 	and evalDict (dc: dict) (r: evT env) : (ide * evT) list =
-			match dc with
+		match dc with
 			Empty -> [] |
 			Item(id, e1, tl) -> (id, (eval e1 r))::evalDict tl r
-	and evalKeyList (kl: keyList) (r: evT env) : ide list =
-		match kl with
-			EndList -> [] |
-			StrItem(id, tl) -> id::evalKeyList tl r
 	and memberDict (key: ide) (dc: (ide * evT) list) : bool =
 		match dc with
 			[] -> false |
 			(k, v)::tl -> if k = key then true else memberDict key tl
+	and convertKeyList (kl: keyList) : ide list =
+		match kl with
+			EndList -> [] |
+			StrItem(id, tl) -> id::convertKeyList tl
 	and memberList (key: ide) (kl: keyList) : bool =
 		match kl with
 			EndList -> false |
 			StrItem(k, tl) -> if k = key then true else memberList key tl
-	and insertDic (key: ide) (newVal: evT) (dc: (ide * evT) list) (r: evT env) : (ide * evT) list =
+	and insertDic (key: ide) (newVal: evT) (dc: (ide * evT) list) : (ide * evT) list =
 		match dc with
 			[] -> [(key, newVal)] |
-			(k, v)::tl -> if key = k then failwith("this key already exists") else (k, v)::(insertDic key newVal tl r)
+			(k, v)::tl -> if key = k then failwith("this key already exists") else (k, v)::(insertDic key newVal tl)
 	and deleteFromDic (key: ide) (dc: (ide * evT) list) : (ide * evT) list =
 		match dc with
 			[] -> [] |
@@ -186,15 +187,3 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
 			Empty -> [] |
 			Item(key, v, tl) -> if (memberList key kl) then (key, (eval v r))::(filterDic kl tl r) else filterDic kl tl r;;
 		
-(* =============================  TESTS  ================= *)
-
-(* basico: no let *)
-let env0 = emptyenv Unbound;;
-
-let e1 = FunCall(Fun("y", Sum(Den "y", Eint 1)), Eint 3);;
-
-eval e1 env0;;
-
-let e2 = FunCall(Let("x", Eint 2, Fun("y", Sum(Den "y", Den "x"))), Eint 3);;
-
-eval e2 env0;;
