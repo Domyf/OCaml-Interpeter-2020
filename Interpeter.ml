@@ -26,6 +26,15 @@ let typecheck (s : string) (v : evT) : bool = match s with
 	"bool" -> (match v with
 		Bool(_) -> true |
 		_ -> false) |
+	"string" -> (match v with
+		String(_) -> true |
+		_ -> false) |
+	"dictionary" -> (match v with
+		DictionaryVal(_) -> true |
+		_ -> false) |
+	"keylist" -> (match v with
+		KeyListVal(_) -> true |
+		_ -> false) |
 	_ -> failwith("not a valid type");;
 
 (*funzioni primitive*)
