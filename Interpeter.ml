@@ -96,11 +96,9 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
 	Let(i, e1, e2) -> eval e2 (bind r i (eval e1 r)) |
 	Fun(i, a) -> FunVal(i, a, r) |
 	Dictionary(d) -> DictionaryVal(evalDict d r) |
-	Insert(field, e1, dict) -> 
+	Insert(key, e1, dict) -> 
 				(match eval dict r with
-					DictionaryVal(dic) -> if memberDict field dic
-											then failwith("this field already exists") 
-										    else DictionaryVal((field, (eval e1 r))::dic) |
+					DictionaryVal(dic) -> DictionaryVal(insertDic key (eval e1 r) dic r) |
 					_ -> failwith("Not a dictionary")) |
 	FunCall(f, eArg) -> 
 		let fClosure = (eval f r) in
@@ -122,10 +120,14 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
 			match dc with
 			Empty -> [] |
 			Item(id, e1, tl) -> (id, (eval e1 r))::evalDict tl r
-	and memberDict (field: ide) (dc: (ide * evT) list) : bool =
+	and memberDict (key: ide) (dc: (ide * evT) list) : bool =
 		match dc with
 			[] -> false |
-			(i, v)::tl -> if i = field then true else memberDict field tl;;
+			(i, v)::tl -> if i = key then true else memberDict key tl
+	and insertDic (key: ide) (newVal: evT) (dc: (ide * evT) list) (r: evT env) : (ide * evT) list =
+		match dc with
+			[] -> [(key, newVal)] |
+			(i, v)::tl -> if key = i then failwith("this key already exists") else (i, v)::(insertDic key newVal tl r);;
 		
 (* =============================  TESTS  ================= *)
 
