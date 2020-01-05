@@ -3,7 +3,7 @@ type exp = Eint of int | Ebool of bool | EString of string | Den of ide | Prod o
 	Eq of exp * exp | Minus of exp | IsZero of exp | Or of exp * exp | And of exp * exp | Not of exp |
 	Ifthenelse of exp * exp * exp | Let of ide * exp * exp | Fun of ide * exp | FunCall of exp * exp |
 	Letrec of ide * exp * exp | Dictionary of dict | Select of ide * exp | Insert of ide * exp * exp |
-	Remove of exp * ide | Clear of exp | ApplyOver of exp * exp
+	Delete of exp * ide | Clear of exp | ApplyOver of exp * exp
 and dict = Empty | Item of ide * exp * dict;;
 
 (*ambiente polimorfo*)
@@ -100,6 +100,10 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
 				(match eval dict r with
 					DictionaryVal(dic) -> DictionaryVal(insertDic key (eval e1 r) dic r) |
 					_ -> failwith("Not a dictionary")) |
+	Delete(dict, key) -> 
+				(match eval dict r with
+					DictionaryVal(dic) -> DictionaryVal(deleteFromDic key dic) |
+					_ -> failwith("Not a dictionary")) |
 	FunCall(f, eArg) -> 
 		let fClosure = (eval f r) in
 			(match fClosure with
@@ -127,7 +131,11 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
 	and insertDic (key: ide) (newVal: evT) (dc: (ide * evT) list) (r: evT env) : (ide * evT) list =
 		match dc with
 			[] -> [(key, newVal)] |
-			(i, v)::tl -> if key = i then failwith("this key already exists") else (i, v)::(insertDic key newVal tl r);;
+			(i, v)::tl -> if key = i then failwith("this key already exists") else (i, v)::(insertDic key newVal tl r)
+	and deleteFromDic (key: ide) (dc: (ide * evT) list) : (ide * evT) list =
+		match dc with
+			[] -> [] |
+			(i, v)::tl -> if key = i then tl else (i,v)::(deleteFromDic key tl);;
 		
 (* =============================  TESTS  ================= *)
 

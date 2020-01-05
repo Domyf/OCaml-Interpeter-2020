@@ -12,3 +12,7 @@ eval dictExpr env0;;
 (* inserimento *)
 let insertExpr = Insert("kiwi", Eint(300), dictExpr);;
 eval insertExpr env0;;
+
+(* rimozione *)
+let removeExpr = Delete(insertExpr, "pere");;
+eval removeExpr env0;;
