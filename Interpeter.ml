@@ -1,5 +1,5 @@
 type ide = string;;
-type exp = Eint of int | Ebool of bool | Den of ide | Prod of exp * exp | Sum of exp * exp | Diff of exp * exp |
+type exp = Eint of int | Ebool of bool | EString of string | Den of ide | Prod of exp * exp | Sum of exp * exp | Diff of exp * exp |
 	Eq of exp * exp | Minus of exp | IsZero of exp | Or of exp * exp | And of exp * exp | Not of exp |
 	Ifthenelse of exp * exp * exp | Let of ide * exp * exp | Fun of ide * exp | FunCall of exp * exp |
 	Letrec of ide * exp * exp | Dictionary of dict | Select of ide * exp | Insert of ide * exp * exp |
@@ -13,7 +13,7 @@ let applyenv (r : 't env) (i : ide) = r i;;
 let bind (r : 't env) (i : ide) (v : 't) = function x -> if x = i then v else applyenv r x;;
 
 (*tipi esprimibili*)
-type evT = Int of int | Bool of bool | Unbound | FunVal of evFun | RecFunVal of ide * evFun | DictionaryVal of (ide * evT) list
+type evT = Int of int | Bool of bool | String of string | Unbound | FunVal of evFun | RecFunVal of ide * evFun | DictionaryVal of (ide * evT) list
 and evFun = ide * exp * evT env
 
 (*rts*)
@@ -95,7 +95,13 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
 				else failwith ("nonboolean guard") |
 	Let(i, e1, e2) -> eval e2 (bind r i (eval e1 r)) |
 	Fun(i, a) -> FunVal(i, a, r) |
-	Dictionary(d) -> DictionaryVal(evalDict d r) |	
+	Dictionary(d) -> DictionaryVal(evalDict d r) |
+	Insert(field, e1, dict) -> 
+				(match eval dict r with
+					DictionaryVal(dic) -> if memberDict field dic
+											then failwith("this field already exists") 
+										    else DictionaryVal((field, (eval e1 r))::dic) |
+					_ -> failwith("Not a dictionary")) |
 	FunCall(f, eArg) -> 
 		let fClosure = (eval f r) in
 			(match fClosure with
@@ -112,10 +118,14 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
             		Fun(i, fBody) -> let r1 = (bind r f (RecFunVal(f, (i, fBody, r)))) in
                          			                eval letBody r1 |
             		_ -> failwith("non functional def"))
-		and evalDict (dc: dict) (r: evT env) : (ide * evT) list =
+	and evalDict (dc: dict) (r: evT env) : (ide * evT) list =
 			match dc with
-				Empty -> [] |
-				Item(id, e1, tl) -> (id, (eval e1 r))::evalDict tl r;;
+			Empty -> [] |
+			Item(id, e1, tl) -> (id, (eval e1 r))::evalDict tl r
+	and memberDict (field: ide) (dc: (ide * evT) list) : bool =
+		match dc with
+			[] -> false |
+			(i, v)::tl -> if i = field then true else memberDict field tl;;
 		
 (* =============================  TESTS  ================= *)
 
