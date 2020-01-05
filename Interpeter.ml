@@ -2,8 +2,8 @@ type ide = string;;
 type exp = Eint of int | Ebool of bool | EString of string | Den of ide | Prod of exp * exp | Sum of exp * exp | Diff of exp * exp |
 	Eq of exp * exp | Minus of exp | IsZero of exp | Or of exp * exp | And of exp * exp | Not of exp |
 	Ifthenelse of exp * exp * exp | Let of ide * exp * exp | Fun of ide * exp | FunCall of exp * exp |
-	Letrec of ide * exp * exp | Dictionary of dict | Select of ide * exp | Insert of ide * exp * exp |
-	Delete of exp * ide | Clear of exp | ApplyOver of exp * exp
+	Letrec of ide * exp * exp | Dictionary of dict | Insert of ide * exp * exp |
+	Delete of exp * ide | Has_Key of ide * exp | Clear of exp | ApplyOver of exp * exp
 and dict = Empty | Item of ide * exp * dict;;
 
 (*ambiente polimorfo*)
@@ -103,6 +103,10 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
 	Delete(dict, key) -> 
 				(match eval dict r with
 					DictionaryVal(dic) -> DictionaryVal(deleteFromDic key dic) |
+					_ -> failwith("Not a dictionary")) |
+	Has_Key(key, dict) -> 
+				(match eval dict r with
+					DictionaryVal(dic) -> Bool(memberDict key dic) |
 					_ -> failwith("Not a dictionary")) |
 	FunCall(f, eArg) -> 
 		let fClosure = (eval f r) in

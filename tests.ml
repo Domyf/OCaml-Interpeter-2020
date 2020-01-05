@@ -14,5 +14,9 @@ let insertExpr = Insert("kiwi", Eint(300), dictExpr);;
 eval insertExpr env0;;
 
 (* rimozione *)
-let removeExpr = Delete(insertExpr, "pere");;
+let removeExpr = Delete(dictExpr, "pere");;
 eval removeExpr env0;;
+
+(* controllo chiave *)
+let haskeyExpr = Has_Key("banane", dictExpr);;
+eval haskeyExpr env0;;
