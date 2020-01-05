@@ -154,6 +154,7 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
 		match dc with
 			Empty -> [] |
 			Item(id, e1, tl) -> (id, (eval e1 r))::evalDict tl r
+	(* ritorna true se nel dizionario è presente la chiave key *)
 	and memberDict (key: ide) (dc: (ide * evT) list) : bool =
 		match dc with
 			[] -> false |
@@ -162,26 +163,32 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
 		match kl with
 			EndList -> [] |
 			StrItem(id, tl) -> id::convertKeyList tl
+	(* ritorna true se nella lista di chiavi è presente la chiave key *)
 	and memberList (key: ide) (kl: keyList) : bool =
 		match kl with
 			EndList -> false |
 			StrItem(k, tl) -> if k = key then true else memberList key tl
+	(* inserisce key e newVal in coda al dizionario *)
 	and insertDic (key: ide) (newVal: evT) (dc: (ide * evT) list) : (ide * evT) list =
 		match dc with
 			[] -> [(key, newVal)] |
 			(k, v)::tl -> if key = k then failwith("this key already exists") else (k, v)::(insertDic key newVal tl)
+	(* rimuove key dal dizinario *)
 	and deleteFromDic (key: ide) (dc: (ide * evT) list) : (ide * evT) list =
 		match dc with
 			[] -> [] |
 			(k, v)::tl -> if key = k then tl else (k,v)::(deleteFromDic key tl)
+	(* chiama f per ogni elemento del dizionario passando l'elemento stesso come argomento *)	
 	and iterDic (f: exp) (dc: dict) (r: evT env) : (ide * evT) list =
 		match dc with
 			Empty -> [] |
 			Item(key, v, tl) -> let newVal = eval (FunCall(f, v)) r in (key, newVal)::(iterDic f tl r)
+	(* applica una funzione ad ogni elemento e ritorna la somma di tutti i risultati *)
 	and sumDic (f: exp) (dc: dict) (r: evT env) : evT =
 		match dc with
 			Empty -> Int(0) |
 			Item(key, v, tl) -> let newVal = eval (FunCall(f, v)) r in sum newVal (sumDic f tl r)
+	(* restituisce un dizionario con le sole chiavi contenute nella lista di chiavi *)
 	and filterDic (kl: keyList) (dc: dict) (r: evT env) : (ide * evT) list =
 		match dc with
 			Empty -> [] |

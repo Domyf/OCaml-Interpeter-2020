@@ -22,14 +22,18 @@ eval removeExpr env0;;
 let haskeyExpr = Has_Key("banane", dictExpr);;
 eval haskeyExpr env0;;
 
+(* iterazione funzione *)
 let iterExpr = Iterate(Fun("x", Sum(Den("x"), Eint(1))), mag);;
 eval iterExpr env0;;
 
+(* fold *)
 let foldExpr = Fold(Fun("x", Sum(Den("x"), Eint(1))), mag);;
 eval foldExpr env0;;
 
+(* lista di chiavi *)
 let keyList = KeyList(StrItem("mele", StrItem("pere", EndList)));;
 eval keyList env0;;
 
+(* filtra in base a lista di chiavi *)
 let filterExpr = Filter(keyList, mag);;
 eval filterExpr env0;;
