@@ -3,8 +3,9 @@ type exp = Eint of int | Ebool of bool | EString of string | Den of ide | Prod o
 	Eq of exp * exp | Minus of exp | IsZero of exp | Or of exp * exp | And of exp * exp | Not of exp |
 	Ifthenelse of exp * exp * exp | Let of ide * exp * exp | Fun of ide * exp | FunCall of exp * exp |
 	Letrec of ide * exp * exp | Dictionary of dict | Insert of ide * exp * exp | Delete of exp * ide |
-	Has_Key of ide * exp | Iterate of exp * exp
-and dict = Empty | Item of ide * exp * dict;;
+	Has_Key of ide * exp | Iterate of exp * exp | Fold of exp * exp | KeyList of keyList | Filter of exp * exp
+and dict = Empty | Item of ide * exp * dict
+and keyList = EndList | StrItem of ide * keyList;;
 
 (*ambiente polimorfo*)
 type 't env = ide -> 't;;
@@ -13,7 +14,7 @@ let applyenv (r : 't env) (i : ide) = r i;;
 let bind (r : 't env) (i : ide) (v : 't) = function x -> if x = i then v else applyenv r x;;
 
 (*tipi esprimibili*)
-type evT = Int of int | Bool of bool | String of string | Unbound | FunVal of evFun | RecFunVal of ide * evFun | DictionaryVal of (ide * evT) list
+type evT = Int of int | Bool of bool | String of string | Unbound | FunVal of evFun | RecFunVal of ide * evFun | DictionaryVal of (ide * evT) list | KeyListVal of ide list
 and evFun = ide * exp * evT env
 
 (*rts*)
@@ -96,6 +97,7 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
 	Let(i, e1, e2) -> eval e2 (bind r i (eval e1 r)) |
 	Fun(i, a) -> FunVal(i, a, r) |
 	Dictionary(d) -> DictionaryVal(evalDict d r) |
+	KeyList(kl) -> KeyListVal(evalKeyList kl r) |
 	Insert(key, e1, dict) -> 
 				(match eval dict r with
 					DictionaryVal(dic) -> DictionaryVal(insertDic key (eval e1 r) dic r) |
@@ -111,6 +113,14 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
 	Iterate(f, d) ->
 				(match d with
 					Dictionary(dic) -> DictionaryVal(iterDic f dic r) |
+					_ -> failwith("Not a dictionary")) |
+	Fold(f, d) ->
+				(match d with
+					Dictionary(dic) -> sumDic f dic r |
+					_ -> failwith("Not a dictionary")) |
+	Filter(kl, d) -> 
+				(match d with
+					Dictionary(dic) -> DictionaryVal(filterDic  dic r) |
 					_ -> failwith("Not a dictionary")) |
 	FunCall(f, eArg) -> 
 		let fClosure = (eval f r) in
@@ -132,10 +142,18 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
 			match dc with
 			Empty -> [] |
 			Item(id, e1, tl) -> (id, (eval e1 r))::evalDict tl r
+	and evalKeyList (kl: keyList) (r: evT env) : ide list =
+		match kl with
+			EndList -> [] |
+			StrItem(id, tl) -> id::evalKeyList tl r
 	and memberDict (key: ide) (dc: (ide * evT) list) : bool =
 		match dc with
 			[] -> false |
 			(k, v)::tl -> if k = key then true else memberDict key tl
+	and memberList (key: ide) (kl: ide list) : bool =
+		match kl with
+			[] -> false |
+			k::tl -> if k = key then true else memberList key tl
 	and insertDic (key: ide) (newVal: evT) (dc: (ide * evT) list) (r: evT env) : (ide * evT) list =
 		match dc with
 			[] -> [(key, newVal)] |
@@ -147,7 +165,11 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
 	and iterDic (f: exp) (dc: dict) (r: evT env) : (ide * evT) list =
 		match dc with
 			Empty -> [] |
-			Item(key, v, tl) -> let newVal = eval (FunCall(f, v)) r in (key, newVal)::(iterDic f tl r);;
+			Item(key, v, tl) -> let newVal = eval (FunCall(f, v)) r in (key, newVal)::(iterDic f tl r)
+	and sumDic (f: exp) (dc: dict) (r: evT env) : evT =
+		match dc with
+			Empty -> Int(0) |
+			Item(key, v, tl) -> let newVal = eval (FunCall(f, v)) r in sum newVal (sumDic f tl r);;
 		
 (* =============================  TESTS  ================= *)
 

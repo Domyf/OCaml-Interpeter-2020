@@ -24,3 +24,12 @@ eval haskeyExpr env0;;
 
 let iterExpr = Iterate(Fun("x", Sum(Den("x"), Eint(1))), mag);;
 eval iterExpr env0;;
+
+let foldExpr = Fold(Fun("x", Sum(Den("x"), Eint(1))), mag);;
+eval foldExpr env0;;
+
+let keyList = KeyList(StrItem("mele", StrItem("pere", EndList)));;
+eval keyList env0;;
+
+let filterExpr = Filter(keyList, mag);;
+eval filterExpr env0;;
