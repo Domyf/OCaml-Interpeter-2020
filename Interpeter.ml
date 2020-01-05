@@ -119,9 +119,11 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
 					Dictionary(dic) -> sumDic f dic r |
 					_ -> failwith("Not a dictionary")) |
 	Filter(kl, d) -> 
-				(match d with
-					Dictionary(dic) -> DictionaryVal(filterDic  dic r) |
-					_ -> failwith("Not a dictionary")) |
+				(match d,kl with
+					Dictionary(dic), KeyList(kLis) -> DictionaryVal(filterDic kLis dic r) |
+					_, KeyList(kList) -> failwith("Not a dictionary")	|
+					Dictionary(dic), _ -> failwith("Not a list of keys") |
+					_, _ -> failwith("Not a dictionary and not a list of keys")) |
 	FunCall(f, eArg) -> 
 		let fClosure = (eval f r) in
 			(match fClosure with
@@ -150,10 +152,10 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
 		match dc with
 			[] -> false |
 			(k, v)::tl -> if k = key then true else memberDict key tl
-	and memberList (key: ide) (kl: ide list) : bool =
+	and memberList (key: ide) (kl: keyList) : bool =
 		match kl with
-			[] -> false |
-			k::tl -> if k = key then true else memberList key tl
+			EndList -> false |
+			StrItem(k, tl) -> if k = key then true else memberList key tl
 	and insertDic (key: ide) (newVal: evT) (dc: (ide * evT) list) (r: evT env) : (ide * evT) list =
 		match dc with
 			[] -> [(key, newVal)] |
@@ -169,7 +171,11 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
 	and sumDic (f: exp) (dc: dict) (r: evT env) : evT =
 		match dc with
 			Empty -> Int(0) |
-			Item(key, v, tl) -> let newVal = eval (FunCall(f, v)) r in sum newVal (sumDic f tl r);;
+			Item(key, v, tl) -> let newVal = eval (FunCall(f, v)) r in sum newVal (sumDic f tl r)
+	and filterDic (kl: keyList) (dc: dict) (r: evT env) : (ide * evT) list =
+		match dc with
+			Empty -> [] |
+			Item(key, v, tl) -> if (memberList key kl) then (key, (eval v r))::(filterDic kl tl r) else filterDic kl tl r;;
 		
 (* =============================  TESTS  ================= *)
 
