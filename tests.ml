@@ -30,6 +30,10 @@ eval iterExpr env0;;
 let foldExpr = Fold(Fun("x", Sum(Den("x"), Eint(1))), mag);;
 eval foldExpr env0;;
 
+(* fold corso A *)
+let foldExpr = Fold(AccFun("x", "acc", Sum(Den("x"), Sum(Den("acc"), Eint(1)))), mag);;
+eval foldExpr env0;;
+
 (* lista di chiavi *)
 let keyList = KeyList(StrItem("mele", StrItem("pere", EndList)));;
 eval keyList env0;;
