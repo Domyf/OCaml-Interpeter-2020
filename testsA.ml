@@ -26,8 +26,8 @@ eval haskeyExpr env0;;
 let iterExpr = Iterate(Fun("x", Sum(Den("x"), Eint(1))), mag);;
 eval iterExpr env0;;
 
-(* fold *)
-let foldExpr = Fold(Fun("x", Sum(Den("x"), Eint(1))), mag);;
+(* fold corso A *)
+let foldExpr = Fold(AccFun("x", "acc", Sum(Den("x"), Sum(Den("acc"), Eint(1)))), mag);;
 eval foldExpr env0;;
 
 (* lista di chiavi *)
