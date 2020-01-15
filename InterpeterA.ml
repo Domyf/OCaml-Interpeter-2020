@@ -108,7 +108,7 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
 	Let(i, e1, e2) -> eval e2 (bind r i (eval e1 r)) |
 	Fun(i, a) -> FunVal(i, a, r) |
 	AccFun(arg, acc, body) -> AccFunVal(arg, acc, body, r) |
-	Dictionary(d) -> DictionaryVal(evalDict d r) |
+	Dictionary(d) -> DictionaryVal(evalDict [] d r) |
 	KeyList(kl) -> KeyListVal(convertKeyList kl) |
 	Insert(key, e1, dict) -> 
 				(match eval dict r with
@@ -159,10 +159,14 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
             		Fun(i, fBody) -> let r1 = (bind r f (RecFunVal(f, (i, fBody, r)))) in
                          			                eval lBody r1 |
             		_ -> failwith("non functional def"))
-	and evalDict (dc: dict) (r: evT env) : (ide * evT) list =
+	and evalDict (ids: ide list) (dc: dict) (r: evT env) : (ide * evT) list =
 		match dc with
 			Empty -> [] |
-			Item(id, e1, tl) -> (id, (eval e1 r))::evalDict tl r
+			Item(id, e1, tl) -> if checkId id ids then failwith("id already exists") else (id, (eval e1 r))::(evalDict (id::ids) tl r)
+	and checkId (id: ide) (ids: ide list) : bool =
+		match ids with
+			[] -> false |
+			idh::idstail -> if id = idh then true else checkId id idstail
 	(* ritorna true se nel dizionario è presente la chiave key *)
 	and memberDict (key: ide) (dc: (ide * evT) list) : bool =
 		match dc with
