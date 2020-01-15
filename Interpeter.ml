@@ -150,14 +150,13 @@ let rec eval (e : exp) (r : evT env) : evT = match e with
             		Fun(i, fBody) -> let r1 = (bind r f (RecFunVal(f, (i, fBody, r)))) in
                          			                eval letBody r1 |
             		_ -> failwith("non functional def"))
-	and evalDict (ids: ide list) (dc: dict) (r: evT env) : (ide * evT) list =
+	and evalDict (ids: (ide * evT) list) (dc: dict) (r: evT env) : (ide * evT) list =
 		match dc with
 			Empty -> [] |
-			Item(id, e1, tl) -> if checkId id ids then failwith("id already exists") else (id, (eval e1 r))::(evalDict (id::ids) tl r)
-	and checkId (id: ide) (ids: ide list) : bool =
-		match ids with
-			[] -> false |
-			idh::idstail -> if id = idh then true else checkId id idstail
+			Item(id, e1, tl) -> if memberDict id ids then failwith("id already exists") 
+									else
+										let value = (eval e1 r) in 
+											(id, value)::(evalDict ((id, value)::ids) tl r)
 	(* ritorna true se nel dizionario è presente la chiave key *)
 	and memberDict (key: ide) (dc: (ide * evT) list) : bool =
 		match dc with
